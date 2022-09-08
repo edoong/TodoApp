@@ -1,0 +1,771 @@
+﻿@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<IdentityUser> UserManager;
+@{
+
+}
+
+
+<div class="row pb-5">
+    <div class="col-md-3">
+        <button class="btn btn-primary" type="button" onclick="ModalInstance('Add', 'show')">Add new Todo Item</button>
+    </div>
+</div>
+
+
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                My Todo List
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="TodoAccordion">
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="modal fade" id="AddModal">
+    <form id="AddForm">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                @Html.Hidden("TaskOwner",@UserManager.GetUserId(@User))
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Add new Task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 alert alert-danger" role="alert" id="errorMessages" style="display:none"></div>
+
+                    <div class="mb-3">
+                        <label for="todoName" class="form-label">*Todo Name:</label>
+                        <input id="todoName" name="TodoName" class="form-control" type="text" placeholder="Enter Todo Title">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="todoDescription" class="form-label">Todo Description:</label>
+                        <input id="todoDescription" name="TodoDescription" class="form-control" type="text" placeholder="Enter Todo Description">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="todoRemind" class="form-label">Remind me in:</label>
+                        <input id="todoRemind" name="RemindMeDate" class="form-control" type="date" placeholder="Set reminder">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="todoPriority" class="form-label">*Priority:</label>
+                        <select id="todoPriority" name="TodoPriority" class="form-select">
+                            @foreach (var item in Enum.GetValues(typeof(AppCommon.TodoPriortyList)))
+                            {
+                                <option value="@Convert.ToInt32(item)">@item</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" onclick="ResetAddForm()">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="SaveAndCreate()">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</div>
+
+
+
+<div class="modal fade" id="EditModal">
+    <form id="EditForm">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                @Html.Hidden("TaskOwner",@UserManager.GetUserId(@User), new {Id = "EditTaskOwner"})
+
+                <input type="hidden" name="Id" id="TaskId_Edit" />
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Task <span id="TaskId_Edit_Label"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 alert alert-danger" role="alert" id="errorMessages_Edit" style="display:none"></div>
+
+                    <div class="mb-3">
+                        <label for="todoName_Edit" class="form-label">*Todo Name:</label>
+                        <input id="todoName_Edit" name="TodoName" class="form-control" type="text" placeholder="Enter Todo Title">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="todoDescription_Edit" class="form-label">Todo Description:</label>
+                        <input id="todoDescription_Edit" name="TodoDescription" class="form-control" type="text" placeholder="Enter Todo Description">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="todoRemind_Edit" class="form-label">Remind me in:</label>
+                        <input id="todoRemind_Edit" name="RemindMeDate" class="form-control" type="date" placeholder="Set reminder">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="todoPriority_Edit" class="form-label">*Priority:</label>
+                        <select id="todoPriority_Edit" name="TodoPriority" class="form-select">
+                            @foreach (var item in Enum.GetValues(typeof(AppCommon.TodoPriortyList)))
+                            {
+                                <option value="@Convert.ToInt32(item)">@item</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" onclick="ResetEditForm()">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="SaveAndUpdate()">Update Task</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</div>
+
+<div class="modal fade" id="DeleteModal">
+    <form id="DeleteForm">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                @Html.Hidden("TaskOwner",@UserManager.GetUserId(@User), new {Id = "DeleteTaskOwner"})
+                <input type="hidden" name="Id" id="TaskId_Delete" />
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete Task </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <h5>Are you sure you want to delete Task# <span class="text-primary" id="TaskId_Delete_Label"></span> ?</h5>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" onclick="DeleteTask()">Confirm Deletion</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+@section Scripts{
+
+
+    <script type="text/javascript">
+
+        document.addEventListener("DOMContentLoaded", () => {
+            PopulateTodoItems();
+        });
+
+        const AddFormModal = new bootstrap.Modal(document.getElementById('AddModal'), {});
+        const EditFormModal = new bootstrap.Modal(document.getElementById('EditModal'), {});
+        const DeleteFormModal = new bootstrap.Modal(document.getElementById('DeleteModal'), {});
+
+        function ModalInstance(type, action, id) {
+            if (type == "Add") {
+                if (action == "show") {
+                    AddFormModal.show();
+                }
+                else if (action == "hide") {
+                    AddFormModal.hide();
+                }
+            }
+            else if (type == "Edit") {
+                if (action == "show") {
+                    GetTodoItem(id);
+                    EditFormModal.show();
+                }
+                else if (action == "hide") {
+                    EditFormModal.hide();
+                }
+            }
+            else if (type == "Delete") {
+                if (action == "show") {
+
+                    document.getElementById('TaskId_Delete').value = id;
+                    document.getElementById('TaskId_Delete_Label').append(document.createTextNode(id));
+                    DeleteFormModal.show();
+                }
+                else if (action == "hide") {
+                    DeleteFormModal.hide();
+                }
+            }
+        }
+
+        function GetTodoItem(id) {
+            fetch(`/api/todoitems/${id}`)
+                .then(data => data.json())
+                .then(data => {
+                    document.getElementById('TaskId_Edit').value = data.id;
+                    document.getElementById('TaskId_Edit_Label').append(document.createTextNode(`#${data.id}`));
+                    document.getElementById("todoName_Edit").value = data.todoName;
+                    document.getElementById("todoDescription_Edit").value = data.todoDescription;
+                    document.getElementById("todoPriority_Edit").value = data.todoPriority;
+                    document.getElementById("todoRemind_Edit").value = ConvertStringToDate(data.remindMeDate) ?? '';
+                })
+        }
+
+        function PopulateTodoItems() {
+            fetch('/api/todoitems')
+                .then(data => data.json())
+                .then(data => {
+                    RemoveAllChildNodes(document.getElementById("TodoAccordion"));
+                    if (data == null || data.length == 0) {
+                        const accList = document.getElementById("TodoAccordion");
+                        const nothingMessage = document.createElement('p');
+                        nothingMessage.className = "text-danger";
+                        nothingMessage.append(document.createTextNode('Nothing for you to do yet, or add a Todo Item'));
+                        accList.append(nothingMessage);
+
+                    }
+                    if (data.length > 0) {
+                        data.map(item => {
+                            CreateAccordionItem(item);
+                            if (item.itemComments != null) {
+                                CreateAccordionCommentItem(item);
+                            }
+                        })
+                    }
+
+                })
+                .catch(error => console.error(error));
+
+        }
+
+        function PopulateOnlyCommentItems(id) {
+            fetch(`/api/todoItems/${id}`)
+                .then(data => data.json())
+                .then(data => {
+                    if (data != null) {
+                        if (data.itemComments != null) {
+                            CreateAccordionCommentItem(data);
+                        }
+
+                    }
+                })
+        }
+
+
+        function SaveAndCreate() {
+
+            const getForm = document.getElementById("AddForm");
+            const formData = new FormData(getForm);
+
+            let jsonPayload = {};
+            Array.from(formData.entries()).map(([key, value]) => {
+                jsonPayload[key] = value === '' ? null : value;
+            })
+
+
+            fetch('api/todoItems', {
+                method: "POST",
+                body: JSON.stringify(jsonPayload),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                },
+            })
+                .then(response => response.json())
+                .then(response => {
+                    if (response.status && (response.status != 200 || response.status != 201)) {
+                        DisplayErrorMessage(document.getElementById('errorMessages'), Object.values(response.errors), true);
+                        console.error(response);
+                    } else {
+                        PopulateTodoItems();
+                        alert("Task Added Succesfully");
+                        AddFormModal.hide();
+                        ResetAddForm();
+                    }
+                })
+                .catch(error => console.error(error));
+
+        }
+
+        function SaveAndUpdate() {
+            const getForm = document.getElementById("EditForm");
+            const formData = new FormData(getForm);
+
+            let jsonPayload = {};
+            Array.from(formData.entries()).map(([key, value]) => {
+                jsonPayload[key] = value === '' ? null : value;
+            })
+
+
+            fetch(`api/todoItems/${document.getElementById('TaskId_Edit').value}`, {
+                method: "PUT",
+                body: JSON.stringify(jsonPayload),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                },
+            })
+                .then(response => {
+                    if (response.status && response.status != 204) {
+                        const responseErrors = response.json();
+                        DisplayErrorMessage(document.getElementById('errorMessages_Edit'), Object.values(responseErrors.errors), true);
+                        console.error(responseErrors);
+                    } else {
+                        PopulateTodoItems();
+                        alert("Task Updated Succesfully");
+                        EditFormModal.hide();
+                        ResetEditForm();
+                    }
+                })
+                .catch(error => console.error(error));
+
+        }
+
+        function DeleteTask() {
+            fetch(`api/todoItems/${document.getElementById('TaskId_Delete').value}`, {
+                method: "DELETE",
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                },
+            })
+                .then(response => {
+                    if (response.status && response.status != 204) {
+                        const responseErrors = response.json();
+                        console.error(responseErrors);
+                    } else {
+                        PopulateTodoItems();
+                        alert("Task Deleted Succesfully");
+                        DeleteFormModal.hide();
+                    }
+                })
+                .catch(error => console.error(error));
+        }
+
+
+
+
+    </script>
+
+
+    <script type="text/javascript">
+
+        //Todo Comment Functions
+        function AddNewCommment(elementRef, commentItem) {
+            fetch('api/todoItemComments', {
+                method: "POST",
+                body: JSON.stringify(commentItem),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                },
+            })
+                .then(response => {
+                    resetCommentArea(elementRef, commentItem.todoItemId);
+                })
+                .catch(error => console.error(error));
+        }
+
+        function UpdateComment(commentItem) {
+
+            const newComment = prompt("Enter new comment", commentItem.commentText);
+
+            if (newComment != null && newComment != undefined && newComment != '') {
+
+                fetch(`api/todoItemComments/${commentItem.id}`, {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        'id': commentItem.id,
+                        'commentText': newComment,
+                        'UserId': '@UserManager.GetUserId(User)',
+                        'todoItemId': commentItem.todoItemId,
+                    }),
+                    headers: {
+                        "Content-type": "application/json; charset=UTF-8"
+                    },
+                })
+                    .then(response => {
+                        if (response.status && response.status != 204) {
+                            const responseErrors = response.json
+                            console.error(responseErrors);
+                        } else {
+                            resetCommentArea(null, commentItem.todoItemId);
+                        }
+                    })
+                    .catch(error => console.error(error));
+
+            }
+
+        }
+
+        function DeleteComment(commentItem) {
+            fetch(`api/todoItemComments/${commentItem.id}`, {
+                method: "DELETE",
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                },
+            })
+                .then(response => {
+                    if (response.status && response.status != 204) {
+                        const responseErrors = response.json();
+                        console.error(responseErrors);
+                    } else {
+                        resetCommentArea(null, commentItem.todoItemId);
+                    }
+                })
+                .catch(error => console.error(error));
+        }
+
+        function resetCommentArea(elementRef, todoItemId) {
+            if (elementRef != null) {
+                document.getElementById(elementRef).value = "";
+            }
+            const commentArea = document.getElementById(`TodoItem-${todoItemId}-commentArea`);
+            commentArea.replaceChildren();
+            PopulateOnlyCommentItems(todoItemId);
+        }
+
+    </script>
+
+
+    <script type="text/javascript">
+
+        //Utility Functions
+
+        function ResetAddForm() {
+            const errorMsgElement = document.getElementById('errorMessages');
+            RemoveAllChildNodes(errorMsgElement);
+            errorMsgElement.style.display = "none";
+
+            document.getElementById('AddForm').reset();
+        }
+
+        function ResetEditForm() {
+            const errorMsgElement = document.getElementById('errorMessages_Edit');
+            RemoveAllChildNodes(errorMsgElement);
+            errorMsgElement.style.display = "none";
+
+            document.getElementById('EditForm').reset();
+        }
+
+        function IsEmpty(element) {
+            if (element.value.trim() != '' || element.value != undefined || element.value != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        function IsSelectEmpty(element) {
+            if (element.options[element.selectedIndex].value != null || element.options[element.selectedIndex].value != undefined) {
+                return false;
+            }
+
+            return true;
+        }
+
+        function CreateAccordionCommentItem(TodoItemData) {
+
+
+            commentListWrapperUnorderedList = document.createElement('ul');
+            commentListWrapperUnorderedList.className = "list-group mb-4";
+
+
+
+
+            TodoItemData.itemComments.map(data => {
+                const commentListItem = document.createElement('li');
+                commentListItem.className = 'list-group-item d-flex justify-content-between align-items-start';
+
+                const commentUserIcon = document.createElement('i');
+                commentUserIcon.className = 'bi bi-person-circle';
+
+                const commentWrapper = document.createElement('div');
+                commentWrapper.className = 'ms-2 me-auto';
+
+                const commentHeading = document.createElement('div');
+                commentHeading.className = "fw-bold";
+                commentHeading.append(document.createTextNode(data.userName));
+
+                const commentText = document.createElement('div');
+                commentText.append(document.createTextNode(data.commentText));
+
+                const commentDateTime = document.createElement('small');
+                commentDateTime.append(document.createTextNode(ConvertStringToDateWithTime(data.createdDate)));
+
+                const commentEditButton = document.createElement('button');
+                commentEditButton.className = "btn btn-sm btn-outline-primary";
+                commentEditButton.onclick = () => {
+                    UpdateComment(data);
+                }
+
+                const commentEditIcon = document.createElement('i');
+                commentEditIcon.className = "bi bi-pencil-square";
+
+                commentEditButton.append(commentEditIcon);
+
+                const commentDeleteButton = document.createElement('button');
+                commentDeleteButton.className = "btn btn-sm btn-outline-danger";
+                commentDeleteButton.style.marginLeft = '10px';
+                commentDeleteButton.onclick = () => {
+                    DeleteComment(data);
+                }
+                const commentDeleteIcon = document.createElement('i');
+                commentDeleteIcon.className = "bi bi-trash";
+
+                commentDeleteButton.append(commentDeleteIcon);
+
+
+
+                commentWrapper.append(commentHeading);
+                commentWrapper.append(commentText);
+                commentWrapper.append(commentDateTime);
+
+                commentListItem.append(commentUserIcon);
+                commentListItem.append(commentWrapper);
+
+                if (data.userId === '@UserManager.GetUserId(User)') {
+                    commentListItem.append(commentEditButton);
+                    commentListItem.append(commentDeleteButton);
+                }
+                commentListWrapperUnorderedList.append(commentListItem);
+            });
+
+            const GetCommentAreaElement = document.getElementById(`TodoItem-${TodoItemData.id}-commentArea`);
+            GetCommentAreaElement.append(commentListWrapperUnorderedList);
+        }
+
+
+        function CreateAccordionItem(TodoItemData) {
+            //accordion Item
+            const accItem = document.createElement('div');
+            accItem.className = "accordion-item";
+
+            //accordion Header
+            const accHeader = document.createElement('h2');
+            accHeader.className = "accordion-header";
+            accHeader.id = `TodoItem-${TodoItemData.id}-heading`;
+
+
+            //accordion Body Wrapper
+            const accBodyPanel = document.createElement('div');
+            accBodyPanel.id = `TodoItem-${TodoItemData.id}-collapse`;
+            accBodyPanel.className = 'accordion-collapse collapse';
+
+            //accordion Body
+            const accBody = document.createElement('div');
+            accBody.className = "accordion-body";
+
+            const accBodyText = document.createTextNode((TodoItemData.todoDescription === '' || TodoItemData.todoDescription === null) ? 'No Description entered.' : TodoItemData.todoDescription);
+            accBodyPanel.append(accBody);
+            accBody.append(accBodyText)
+            accBody.append(document.createElement('hr'));
+            accBody.append(document.createTextNode("Comments"))
+
+            //comment Area
+            const commentAreaWrapper = document.createElement('div');
+            commentAreaWrapper.className = "row";
+
+            const commentArea = document.createElement('div');
+            commentArea.className = "col-md-9";
+            commentArea.id = `TodoItem-${TodoItemData.id}-commentArea`;
+
+            commentAreaWrapper.append(commentArea);
+
+            accBody.append(commentAreaWrapper);
+
+            //accordion CommentBox
+            const commentBoxRow = document.createElement('div')
+            commentBoxRow.className = "row";
+
+            const commentBoxWrapper = document.createElement('div')
+            commentBoxWrapper.className = "col-md-9";
+
+            const commentBoxInput = document.createElement('textarea');
+            commentBoxInput.className = 'form-control';
+            commentBoxInput.name = "commentTextInput";
+            commentBoxInput.id = `TodoItem-${TodoItemData.id}-commentTextInput`;
+            commentBoxInput.maxLength = 255;
+            commentBoxInput.title = "Comment Area";
+            commentBoxInput.placeholder = "Enter comment";
+            commentBoxInput.required = true;
+
+            const commentBoxButton = document.createElement('button');
+            commentBoxButton.className = "btn btn-sm btn-outline-primary mt-2";
+            commentBoxButton.append(document.createTextNode('Add Comment'));
+            commentBoxButton.onclick = () => AddNewCommment(commentBoxInput.id, {
+                "commentText": commentBoxInput.value,
+                "userId": document.getElementById('TaskOwner').value,
+                "todoItemId": TodoItemData.id
+            });
+
+            commentBoxWrapper.append(commentBoxInput);
+            commentBoxWrapper.append(commentBoxButton);
+            commentBoxRow.append(commentBoxWrapper);
+
+            accBody.append(commentBoxRow);
+
+            //accordion Button Toggle
+            const accButton = document.createElement('button');
+            accButton.className = "accordion-button collapsed";
+            accButton.setAttribute('data-bs-toggle', 'collapse');
+            accButton.setAttribute('data-bs-target', `#${accBodyPanel.id}`);
+            accButton.type = "button"
+            const accButtonText = document.createTextNode(`${TodoItemData.id} - ${TodoItemData.todoName}`);
+            accButton.append(accButtonText);
+
+
+            //accordion Priority Badge
+            const accPriority = document.createElement('span');
+            const getPriorityObject = DisplayColorForPriority(TodoItemData.todoPriority);
+            accPriority.className = getPriorityObject.className;
+            accPriority.style.marginLeft = '10px';
+            accPriority.append(document.createTextNode(getPriorityObject.label));
+            accButton.append(accPriority);
+
+            if (TodoItemData.remindMeDate != null) {
+                const accRemindMeDate = document.createElement('span');
+                accRemindMeDate.className = "badge bg-dark";
+                accRemindMeDate.style.marginLeft = '10px';
+                accRemindMeDate.append(document.createTextNode(`Due on: ${ConvertStringToDateLabel(TodoItemData.remindMeDate)}`));
+                accButton.append(accRemindMeDate);
+            }
+
+
+
+            accItem.append(accHeader);
+            accHeader.append(accButton);
+
+            accItem.append(accBodyPanel);
+
+
+            const ButtonRow = document.createElement('div');
+            ButtonRow.className = "row pt-5";
+
+            const ButtonWrapper = document.createElement('div');
+
+
+            //Edit button
+            const EditButton = document.createElement('button');
+            EditButton.className = "btn btn-primary";
+            EditButton.type = "button";
+            EditButton.onclick = () => ModalInstance("Edit", "show", TodoItemData.id);
+            EditButton.append(document.createTextNode("Edit"));
+            ButtonWrapper.append(EditButton);
+
+
+            //Delete button
+            const DeleteButton = document.createElement('button');
+            DeleteButton.className = 'btn btn-danger ms-2';
+            DeleteButton.type = "button";
+            DeleteButton.onclick = () => ModalInstance("Delete", "show", TodoItemData.id);
+            DeleteButton.append(document.createTextNode("Delete"));
+            ButtonWrapper.append(DeleteButton);
+
+
+            ButtonRow.append(ButtonWrapper);
+            accBody.append(ButtonRow);
+            //completed accordion
+            const accList = document.getElementById("TodoAccordion");
+            accList.append(accItem);
+
+        }
+
+
+        function RemoveAllChildNodes(parent) {
+            while (parent.firstChild) {
+                parent.removeChild(parent.firstChild);
+            }
+        }
+
+        function DisplayErrorMessage(id, message, IsMultiple) {
+            if (IsMultiple === false) {
+                const errorMsgElement = document.getElementById(id);
+                RemoveAllChildNodes(errorMsgElement);
+
+                const errorMessage = document.createTextNode(message);
+                const spanElement = document.createElement('span');
+                spanElement.className = "text-danger";
+                spanElement.append(errorMessage);
+
+                errorMsgElement.append(spanElement);
+                errorMsgElement.style.display = "block";
+            }
+            else {
+                const errorMsgElement = document.getElementById(id);
+                const unorderListElement = document.createElement("ul");
+                RemoveAllChildNodes(errorMsgElement);
+                message.map(item => {
+                    const errorMessage = document.createTextNode(item[0]);
+                    const listItemElement = document.createElement('li');
+                    listItemElement.className = "text-danger";
+                    listItemElement.append(errorMessage);
+
+                    unorderListElement.append(listItemElement);
+                })
+                errorMsgElement.append(unorderListElement);
+                errorMsgElement.style.display = "block";
+            }
+
+        }
+
+        function DisplayColorForPriority(Priority) {
+            if (Priority === 0) {
+                return {
+                    'className': 'badge bg-secondary',
+                    'label': "Low"
+                };
+            }
+            else if (Priority === 1) {
+                return {
+                    'className': 'badge bg-primary',
+                    'label': "Medium"
+                };
+            }
+            else {
+                return {
+                    'className': 'badge bg-danger',
+                    'label': "High"
+                };
+            }
+        }
+
+        function ConvertStringToDate(string) {
+            if (string === '') {
+                return null;
+            }
+            const date = new Date(string);
+            const dateAddMonth = new Date(string).getMonth() + 1;
+            const month = ('0' + dateAddMonth.toString()).slice(-2);
+            const day = ('0' + date.getDate().toString()).slice(-2);
+
+            const formattedDate = `${date.getFullYear()}-${month}-${day}`;
+            return formattedDate;
+        }
+
+        function ConvertStringToDateWithTime(string) {
+            if (string === '') {
+                return null;
+            }
+            const date = new Date(string);
+            const dateAddMonth = new Date(string).getMonth() + 1;
+            const month = ('0' + dateAddMonth.toString()).slice(-2);
+            const day = ('0' + date.getDate().toString()).slice(-2);
+
+            const formattedDate = `${date.getFullYear()}-${month}-${day} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+            return formattedDate;
+        }
+
+        function ConvertStringToDateLabel(string) {
+            if (string === '') {
+                return null;
+            }
+            const date = new Date(string);
+            const dateAddMonth = new Date(string).getMonth() + 1;
+            const month = ('0' + dateAddMonth.toString()).slice(-2);
+            const day = ('0' + date.getDate().toString()).slice(-2);
+            const formattedDate = `${month}/${day}/${date.getFullYear()}`;
+            return formattedDate;
+        }
+
+    </script>
+
+}
